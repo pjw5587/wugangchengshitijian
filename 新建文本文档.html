@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>舞钢市城市体检信息采集</title>
+    <!-- 引入百度地图API（替换为你的百度AK，可免费申请） -->
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=3.0&ak=你的百度地图AK"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        /* 首页样式 */
+        .home-page {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2f5597;
+            text-align: center;
+            margin-bottom: 60px;
+            line-height: 1.5;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .problem-btn {
+            height: 80px;
+            line-height: 80px;
+            font-size: 20px;
+            background-color: #2f5597;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .problem-btn:hover {
+            background-color: #203b6d;
+        }
+
+        /* 地图采集页样式（默认显示，解决"看不到"问题） */
+        .map-page {
+            max-width: 800px;
+            margin: 0 auto;
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .type-tip {
+            font-size: 18px;
+            color: #2f5597;
+            font-weight: bold;
+            text-align: center;
+        }
+        /* 地图提示+校验提示 */
+        .map-tip {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .check-tip {
+            font-size: 12px;
+            color: #f50;
+            text-align: center;
+            display: none;
+            margin: -10px 0 10px 0;
+        }
+        .map-container {
+            width: 100%;
+            height: 400px;
+            border-radius: 10px;
+            border: 1px solid #eee;
+            /* 确保地图容器可见 */
+            background: #fff;
+        }
+        .form-group {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .form-title {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .radio-item {
+            display: block;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .input-box {
+            width: 100%;
+            height: 50px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 0 15px;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .photo-btn {
+            background-color: #2f5597;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .photo-preview {
+            width: 150px;
+            height: 150px;
+            margin-top: 10px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            display: none;
+            /* 确保预览框可见 */
+            background: #f9f9f9;
+        }
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        .submit-btn {
+            height: 60px;
+            line-height: 60px;
+            background-color: #2f5597;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .back-btn {
+            margin-top: 20px;
+            height: 50px;
+            line-height: 50px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        /* 提交成功页 */
+        .success-page {
+            max-width: 500px;
+            margin: 0 auto;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+        }
+        .success-icon {
+            font-size: 80px;
+            color: #2f5597;
+            margin-bottom: 20px;
+        }
+        .success-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2f5597;
+            margin-bottom: 10px;
+        }
+        .desc-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 首页 -->
+    <div class="home-page" id="homePage">
+        <div class="title">舞钢市城市体检信息采集</div>
+        <div class="btn-group">
+            <button class="problem-btn" onclick="gotoMap('住房问题')">住房问题</button>
+            <button class="problem-btn" onclick="gotoMap('小区问题')">小区问题</button>
+            <button class="problem-btn" onclick="gotoMap('社区问题')">社区问题</button>
+            <button class="problem-btn" onclick="gotoMap('街区问题')">街区问题</button>
+        </div>
+    </div>
+
+    <!-- 地图采集页（修复"看不到"问题） -->
+    <div class="map-page" id="mapPage">
+        <div class="type-tip" id="currentProblemType">当前采集：住房问题</div>
+        <!-- 明确提示百度地图操作 -->
+        <div class="map-tip">✅ 点击百度地图任意位置选择定位点（自动定位后也可手动调整）</div>
+        <!-- 提交校验提示 -->
+        <div class="check-tip" id="checkTip">请检查：小区名称/具体问题/照片/定位是否全部完成</div>
+        <!-- 百度地图容器 -->
+        <div class="map-container" id="mapContainer"></div>
+        
+        <div class="form-group">
+            <span class="form-title">请选择具体问题：</span>
+            <label class="radio-item">
+                <input type="radio" name="problem" value="墙体结构开裂" checked> 墙体结构开裂
+            </label>
+            <label class="radio-item">
+                <input type="radio" name="problem" value="燃气老化开裂"> 燃气老化开裂
+            </label>
+            <label class="radio-item">
+                <input type="radio" name="problem" value="有飘窗"> 有飘窗
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <span class="form-title">所在小区（必填）：</span>
+            <input type="text" class="input-box" id="communityInput" placeholder="请输入小区名称" oninput="checkAllCondition()">
+        </div>
+        
+        <div class="form-group">
+            <span class="form-title">现场照片（必填）：</span>
+            <!-- 修复照片上传兼容性问题 -->
+            <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="handlePhotoUpload(this)">
+            <button class="photo-btn" onclick="document.getElementById('photoInput').click()">📷 拍摄/选择照片（支持相册/相机）</button>
+            <div class="photo-preview" id="photoPreview">
+                <img src="" id="previewImg">
+            </div>
+        </div>
+        
+        <button class="submit-btn" id="submitBtn" disabled onclick="submitForm()">提交信息</button>
+        <button class="back-btn" onclick="backHome()">返回首页</button>
+    </div>
+
+    <!-- 提交成功页 -->
+    <div class="success-page" id="successPage">
+        <div class="success-icon">✓</div>
+        <div class="success-text">信息提交成功！</div>
+        <div class="desc-text">感谢您参与舞钢市城市体检信息采集</div>
+        <button class="back-btn" onclick="backHome()">返回首页</button>
+    </div>
+
+    <script>
+        // 全局状态（简化+明确）
+        let globalState = {
+            currentProblemType: '',
+            lng: 0, // 百度地图经度
+            lat: 0, // 百度地图纬度
+            communityName: '',
+            photoFile: null,
+            photoUrl: ''
+        };
+        let map = null; // 百度地图实例
+        let marker = null; // 百度地图标记
+
+        // 第一步：替换为百度地图初始化+点击定位
+        function initBaiduMap() {
+            // 初始化百度地图（中心点默认舞钢市，避免空白）
+            map = new BMapGL.Map("mapContainer");
+            const defaultPoint = new BMapGL.Point(113.5816, 33.5167); // 舞钢市默认坐标
+            map.centerAndZoom(defaultPoint, 18);
+            map.enableScrollWheelZoom(true); // 开启滚轮缩放
+
+            // 核心：百度地图点击事件（修复"点不了地图"）
+            map.addEventListener("click", function(e) {
+                const point = e.point;
+                // 更新全局坐标
+                globalState.lng = point.lng;
+                globalState.lat = point.lat;
+                
+                // 清除旧标记，添加新标记
+                if (marker) map.removeOverlay(marker);
+                marker = new BMapGL.Marker(point);
+                map.addOverlay(marker);
+                map.panTo(point); // 地图中心跳转到点击位置
+
+                // 提示用户已选中
+                alert(`✅ 已选中定位点：\n经度：${point.lng.toFixed(6)}\n纬度：${point.lat.toFixed(6)}`);
+                
+                // 重新校验提交条件
+                checkAllCondition();
+            });
+
+            // 自动定位（百度地图内置定位）
+            const geolocation = new BMapGL.Geolocation();
+            geolocation.getCurrentPosition(function(r) {
+                if (this.getStatus() === BMAP_STATUS_SUCCESS) {
+                    const point = r.point;
+                    globalState.lng = point.lng;
+                    globalState.lat = point.lat;
+                    
+                    if (marker) map.removeOverlay(marker);
+                    marker = new BMapGL.Marker(point);
+                    map.addOverlay(marker);
+                    map.panTo(point);
+                    alert(`✅ 自动定位成功：\n经度：${point.lng.toFixed(6)}\n纬度：${point.lat.toFixed(6)}`);
+                } else {
+                    alert(`⚠️ 自动定位失败（错误码：${this.getStatus()}），请手动点击地图选择位置`);
+                }
+                checkAllCondition();
+            }, {enableHighAccuracy: true});
+        }
+
+        // 跳转到地图页（确保地图初始化）
+        function gotoMap(type) {
+            globalState.currentProblemType = type;
+            document.getElementById('currentProblemType').innerText = `当前采集：${type}`;
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('mapPage').style.display = 'flex';
+            
+            // 初始化百度地图
+            if (!map) initBaiduMap();
+        }
+
+        // 返回首页（重置所有状态）
+        function backHome() {
+            document.getElementById('mapPage').style.display = 'none';
+            document.getElementById('successPage').style.display = 'none';
+            document.getElementById('homePage').style.display = 'block';
+            
+            // 重置状态
+            globalState = { currentProblemType: '', lng: 0, lat: 0, communityName: '', photoFile: null, photoUrl: '' };
+            marker = null;
+            map = null; // 重置地图
+            
+            // 重置表单
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('communityInput').value = '';
+            document.getElementById('photoInput').value = '';
+            document.querySelector('input[name="problem"][value="墙体结构开裂"]').checked = true;
+            document.getElementById('checkTip').style.display = 'none';
+        }
+
+        // 修复照片上传（解决"上传不上去"）
+        function handlePhotoUpload(el) {
+            const file = el.files[0];
+            if (!file) {
+                alert('⚠️ 未选择照片');
+                return;
+            }
+
+            // 校验文件类型
+            if (!file.type.startsWith('image/')) {
+                alert('⚠️ 请选择图片文件（JPG/PNG等）');
+                el.value = '';
+                return;
+            }
+
+            // 预览照片（核心修复）
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                globalState.photoFile = file;
+                globalState.photoUrl = e.target.result;
+                document.getElementById('previewImg').src = globalState.photoUrl;
+                document.getElementById('photoPreview').style.display = 'block';
+                alert('✅ 照片预览成功！');
+                checkAllCondition();
+            };
+            // 处理读取失败
+            reader.onerror = function() {
+                alert('⚠️ 照片读取失败，请重新选择');
+                el.value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 校验所有提交条件（修复"点不了提交"）
+        function checkAllCondition() {
+            // 1. 获取所有条件状态
+            const communityName = document.getElementById('communityInput').value.trim();
+            const selectedProblem = document.querySelector('input[name="problem"]:checked')?.value;
+            const hasPhoto = !!globalState.photoFile;
+            const hasLocation = globalState.lng !== 0 && globalState.lat !== 0;
+
+            // 2. 更新全局小区名称
+            globalState.communityName = communityName;
+
+            // 3. 判断是否可提交
+            const canSubmit = communityName && selectedProblem && hasPhoto && hasLocation;
+            
+            // 4. 控制提交按钮和提示
+            document.getElementById('submitBtn').disabled = !canSubmit;
+            document.getElementById('checkTip').style.display = canSubmit ? 'none' : 'block';
+
+            // 调试：控制台打印条件状态（方便排查）
+            console.log('校验状态：', {
+                小区名称: communityName ? '✅' : '❌',
+                具体问题: selectedProblem ? '✅' : '❌',
+                照片: hasPhoto ? '✅' : '❌',
+                定位: hasLocation ? '✅' : '❌',
+                可提交: canSubmit ? '✅' : '❌'
+            });
+        }
+
+        // 提交表单（修复提交逻辑）
+        function submitForm() {
+            // 1. 再次校验（防止异常）
+            if (!checkAllCondition()) {
+                alert('⚠️ 请完成所有必填项后提交');
+                return;
+            }
+
+            // 2. 组装提交数据
+            const submitData = {
+                问题类型: globalState.currentProblemType,
+                具体问题: document.querySelector('input[name="problem"]:checked').value,
+                小区名称: globalState.communityName,
+                定位坐标: { 经度: globalState.lng, 纬度: globalState.lat },
+                照片预览地址: globalState.photoUrl,
+                提交时间: new Date().toLocaleString()
+            };
+
+            // 3. 存储到本地（前端临时存储）
+            const history = JSON.parse(localStorage.getItem('cityCheckData') || '[]');
+            history.push(submitData);
+            localStorage.setItem('cityCheckData', JSON.stringify(history));
+
+            // 4. 模拟上传（前端仅预览，后端需对接）
+            alert(`✅ 提交成功！\n数据已保存到浏览器本地，可按F12→Application→LocalStorage查看\n\n提交内容：\n${JSON.stringify(submitData, null, 2)}`);
+            
+            // 5. 跳转到成功页
+            document.getElementById('mapPage').style.display = 'none';
+            document.getElementById('successPage').style.display = 'flex';
+        }
+
+        // 监听问题选择变化
+        document.querySelectorAll('input[name="problem"]').forEach(radio => {
+            radio.onchange = checkAllCondition;
+        });
+    </script>
+</body>
+</html>
