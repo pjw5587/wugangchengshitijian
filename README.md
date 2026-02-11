@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>舞钢市城市体检信息采集</title>
+<script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&type=webgl&ak=C6qUhdM0IXx6bmYS4QekXMlizJXjIJSi"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif}
+body{background:#f5f7fa;padding:15px;min-height:100vh}
+.home{max-width:750px;margin:0 auto;padding:30px 0}
+.title{font-size:30px;font-weight:700;color:#2F5597;text-align:center;margin-bottom:40px}
+.dim-btns{display:flex;flex-direction:column;gap:16px}
+.dim-btn{height:70px;border:none;border-radius:10px;background:#2F5597;color:#fff;font-size:18px;font-weight:500;cursor:pointer}
+.dim-btn:hover{background:#23447c}
+
+/* 采集页 */
+.collect{max-width:750px;margin:0 auto;display:none}
+.back-btn{width:100%;height:50px;border:none;border-radius:8px;background:#666;color:#fff;font-size:16px;margin:10px 0 20px;cursor:pointer}
+.current-dim{font-size:18px;color:#2F5597;font-weight:700;text-align:center;margin-bottom:10px}
+.map-box{width:100%;height:380px;border-radius:10px;background:#fff;border:1px solid #eee;margin-bottom:15px}
+.tip{font-size:14px;color:#666;text-align:center;margin-bottom:10px}
+.warn{font-size:12px;color:#f56a00;text-align:center;margin-bottom:15px;display:none}
+
+/* 问题列表（滚动） */
+.question-group{background:#fff;border-radius:10px;padding:20px;margin-bottom:15px;max-height:360px;overflow-y:auto}
+.question-title{font-size:16px;color:#333;margin-bottom:12px;font-weight:500}
+.question-item{display:block;margin:10px 0;font-size:15px;line-height:1.5}
+
+/* 表单 */
+.form-item{background:#fff;border-radius:10px;padding:18px;margin-bottom:15px}
+.form-label{font-size:16px;color:#333;margin-bottom:8px;display:block}
+.form-input{width:100%;height:46px;border:1px solid #eee;border-radius:6px;padding:0 14px;font-size:15px}
+.photo-btn{width:100%;height:46px;border:none;border-radius:6px;background:#2F5597;color:#fff;font-size:15px;cursor:pointer;margin-top:8px}
+.photo-prev{width:140px;height:140px;border:1px solid #eee;border-radius:6px;margin-top:10px;display:none}
+.photo-prev img{width:100%;height:100%;object-fit:cover;border-radius:6px}
+
+/* 提交按钮 */
+.submit-btn{width:100%;height:55px;border:none;border-radius:10px;background:#2F5597;color:#fff;font-size:18px;font-weight:500;cursor:pointer;margin-top:10px}
+.submit-btn:disabled{background:#ccc}
+
+/* 成功页 */
+.success{max-width:500px;margin:0 auto;display:none;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;text-align:center}
+.success-icon{font-size:70px;color:#2F5597;margin-bottom:20px}
+.success-text{font-size:24px;font-weight:700;color:#2F5597;margin-bottom:10px}
+.success-desc{font-size:16px;color:#666;margin-bottom:30px}
+</style>
+</head>
+
+<body>
+
+<!-- 首页 -->
+<div class="home" id="homePage">
+  <div class="title">舞钢市城市体检信息采集</div>
+  <div class="dim-btns">
+    <button class="dim-btn" onclick="openPage('housing')">一、住房维度（单栋住宅）</button>
+    <button class="dim-btn" onclick="openPage('community')">二、小区（社区）维度</button>
+    <button class="dim-btn" onclick="openPage('street')">三、街区（街道办）维度</button>
+    <button class="dim-btn" onclick="openPage('city')">四、县城（城区）维度</button>
+  </div>
+</div>
+
+<!-- 采集页 -->
+<div class="collect" id="collectPage">
+  <button class="back-btn" onclick="goBack()">← 返回首页</button>
+  <div class="current-dim" id="showDim"></div>
+  <div class="tip">点击地图定位 → 选择问题 → 填写小区/位置 → 上传照片 → 提交</div>
+  <div class="warn" id="warnTip">请完成：定位 + 选择问题 + 小区/位置 + 照片</div>
+  <div class="map-box" id="map"></div>
+
+  <!-- 问题列表 -->
+  <div class="question-group" id="questionList"></div>
+
+  <!-- 小区/位置 -->
+  <div class="form-item">
+    <label class="form-label">所在小区 / 具体位置（必填）</label>
+    <input class="form-input" id="address" oninput="check()" placeholder="请输入小区名称或详细位置">
+  </div>
+
+  <!-- 拍照 -->
+  <div class="form-item">
+    <label class="form-label">现场照片（必填）</label>
+    <input type="file" id="file" accept="image/*" style="display:none" onchange="showPhoto()">
+    <button class="photo-btn" onclick="document.getElementById('file').click()">📷 拍摄 / 上传照片</button>
+    <div class="photo-prev" id="photoPrev"><img id="photoImg"></div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" disabled onclick="doSubmit()">提交信息</button>
+</div>
+
+<!-- 成功页 -->
+<div class="success" id="successPage">
+  <div class="success-icon">✓</div>
+  <div class="success-text">提交成功</div>
+  <div class="success-desc">感谢参与舞钢市城市体检信息采集</div>
+  <button class="back-btn" onclick="goBack()">返回首页</button>
+</div>
+
+<script>
+// 四个维度的全部问题（完全按你提供的原文）
+const dimData = {
+  housing: {
+    name: "住房维度（单栋住宅现状）",
+    questions: [
+      "混凝土结构构件（承重墙体、楼板、结构梁）是否有肉眼清晰可见的贯通裂缝",
+      "是否存在违规拆除结构承重构件（如户内承重墙、底商/地库结构柱、阳台承重墙垛）",
+      "砖混结构主体是否出现砖体缺棱掉角（多处）、表面通长裂缝，砂浆呈粉末状、砖与砂浆间有较大缝隙",
+      "住宅燃气立管、引入管、水平管运行年限是否满20年，且存在锈蚀严重、破损现象",
+      "楼梯踏步是否有缺损（超过10cm）、扶手是否松动损坏、公共区域照明是否缺失、安全护栏是否破损",
+      "通风井道、排风烟道是否存在堵塞，导致通风不畅或倒风串味",
+      "高层住宅消防门是否损坏或无法正常关闭",
+      "高层住宅消火栓是否无日常维护、老化损坏或无水",
+      "公共区域是否缺失灭火器，或灭火器未设置保护设施（灭火器箱/挂装）",
+      "消防安全出口指示灯是否损坏或缺失",
+      "消防楼梯、楼道、管道井等公共空间是否被占用堆放杂物",
+      "外墙装饰材料、保温材料是否存在开裂、损坏或脱落",
+      "外墙悬挂设施（如空调外机、广告牌）是否存在过大过高、损坏或松脱",
+      "公共区域（走廊、楼梯间）门窗玻璃是否破损、脱落",
+      "屋面是否排水不畅、存在漏水痕迹",
+      "外墙内侧或地下室是否有渗水、漏水、积水现象",
+      "住宅是否缺少独立厨房或卫生间（非成套特征）",
+      "住宅内部采光、通风是否存在明显不足",
+      "给水管线是否有跑冒滴漏，排水管线是否老化破损、渗漏堵塞",
+      "冬季采暖区域住宅是否存在室内温度不达标现象",
+      "电力、电信管线是否存在老化破损、裸露或私搭乱接",
+      "4-6层未装电梯的多层住宅，楼梯间一侧是否预留≥4米电梯加装场地",
+      "住宅单元出入口是否未进行无障碍改造、地面未做防滑处理",
+      "楼梯间是否未沿墙加装扶手",
+      "特殊困难老年人家庭住宅是否未实施适老化改造",
+      "2000年前建设的住宅是否未做外墙保温、未采用保温隔热窗，且具备节能改造价值"
+    ]
+  },
+  community: {
+    name: "小区（社区）维度（居住片区配套与环境）",
+    questions: [
+      "小区内是否配建养老服务设施，是否提供助餐、助浴、康复护理等服务",
+      "小区内是否配建幼儿园，园区环境与设施是否完好",
+      "小区内是否配建社区卫生服务站，是否配备常用诊疗器械与基础药品",
+      "小区内车辆是否存在占用消防通道停放的现象",
+      "小区内是否设置固定停车区域，车辆停放是否有序",
+      "小区内是否配建新能源汽车公共充电桩，已配建充电桩是否无法正常使用",
+      "小区内是否配建电动自行车集中室外充电设施",
+      "是否存在电动自行车乱拉飞线充电、占用楼栋出入口或消防通道",
+      "小区内是否配建公共活动场地（含绿地、健身场地），是否配备儿童、老年、健身设施",
+      "小区步行道路面是否破损、雨后积水、铺装不防滑",
+      "步行道是否设置无障碍通道（缘石坡道、扶手）",
+      "小区内是否设置垃圾分类收集设施，是否有清晰分类标识",
+      "小区内是否配建公共厕所，设施是否完好、有无日常保洁、是否有异味",
+      "小区是否有专业化物业管理，是否及时处理居民报修",
+      "小区内是否安装智能信包箱、智能快递柜",
+      "小区出入口是否配备门禁、视频监控等智能安防设施",
+      "小区公共绿地是否有杂物堆积、私搭乱建，植被长势是否良好",
+      "小区内管线管道（给排水、电力、电信）是否外露杂乱",
+      "小区内是否存在公共楼道停放自行车、电动车及违规充电",
+      "小区内非成套住宅的分布及功能缺失情况"
+    ]
+  },
+  street: {
+    name: "街区（街道办）维度（公共空间与设施）",
+    questions: [
+      "街区内是否配建多功能运动场地，是否向公众开放、设施是否完好",
+      "多功能运动场地是否支持两种及以上体育项目转换使用",
+      "街区内是否配建文化活动中心，是否划分青少年、老年活动功能区域",
+      "文化活动中心是否免费开放，是否定期开展活动",
+      "街区300米/500米半径内是否有公园、绿地等绿化活动场地",
+      "绿化活动场地是否整洁，有无杂物堆积、植被修剪不及时",
+      "街区道路是否存在机动车无序停放（≥3辆）、占用绿化带或人行道",
+      "街区道路是否存在非机动车无序停放（≥10辆）、占用通行空间",
+      "街区道路是否存在废弃线缆、线杆松动歪斜",
+      "是否存在乱拉空中线路、飞线充电",
+      "线路交接箱体是否缺损、锈蚀、箱门敞开",
+      "街区500米范围内是否有农贸市场、生鲜超市",
+      "街区步行道是否连贯，有无断头路",
+      "街区夜间照明是否充足，有无明显盲区",
+      "是否存在流动摊贩占道经营影响通行",
+      "街区公共区域是否有垃圾堆积、异味扩散",
+      "街区内历史建筑是否存在私搭乱建、破坏风貌",
+      "街区道路路面是否坑洼、裂缝，井盖是否缺失或松动",
+      "街区内公共服务设施指示牌是否清晰",
+      "街区空中线缆是否规整或入地，是否杂乱无章"
+    ]
+  },
+  city: {
+    name: "县城（城区）维度（全域公共设施与整体风貌）",
+    questions: [
+      "县城公共供水管网是否存在跑冒滴漏、管线外露破损",
+      "县城污水处理设施周边是否有异味扩散、管道渗漏痕迹",
+      "县城道路是否存在断头路、错口路，支路衔接是否连贯",
+      "新建建筑外墙是否标注绿色建筑相关标识",
+      "新建18层及以上住宅消防登高面是否被占用、消防通道是否狭窄",
+      "18层及以上住宅市政配套管线布置是否杂乱",
+      "历史文化街区传统风貌是否存在破坏现象",
+      "历史建筑是否长期闲置（超6个月），有无活化利用",
+      "县城文物建筑、古树名木是否有破损、破坏痕迹",
+      "普通高中校舍、场地、宿舍是否设施破损、空间拥挤",
+      "中学班级是否存在大班额现象",
+      "县级医疗卫生机构是否正常运营、设施完备",
+      "集贸市场是否通道狭窄、地面脏乱、异味明显",
+      "集贸市场是否消防设施缺失、灭火器过期、通道堵塞",
+      "县城公交是否覆盖周边行政村，站点设施是否破损",
+      "大雨后县城是否存在易涝积水点",
+      "老旧市政燃气管网是否裸露、锈蚀严重、接口松动",
+      "县城消防站周边是否有遮挡、通道拥堵",
+      "市政消火栓是否锈蚀、破损、被遮挡",
+      "县城是否设置应急避难场所，有无标识、是否被占用",
+      "建筑施工危大工程是否配备安全监测设施",
+      "县城是否存在架空线缆杂乱、线杆歪斜、箱体破损",
+      "人均避难场所是否设施老化、无应急水电",
+      "县城历史街区、历史建筑是否悬挂保护标识牌",
+      "县城道路网密度是否均衡，主次干路与支路衔接顺畅"
+    ]
+  }
+};
+
+let currentDim = "";
+let map = null, marker = null;
+let hasLocation = false, hasPhoto = false;
+// --- 新增：存储地图点击的经纬度 ---
+let currentLng = 0;
+let currentLat = 0;
+
+// 打开对应维度
+function openPage(dim){
+  currentDim = dim;
+  document.getElementById("homePage").style.display = "none";
+  document.getElementById("collectPage").style.display = "block";
+  document.getElementById("successPage").style.display = "none";
+  document.getElementById("showDim").innerText = dimData[dim].name;
+
+  // 渲染问题
+  let html = `<div class="question-title">请选择当前问题：</div>`;
+  dimData[dim].questions.forEach((q,i)=>{
+    html += `<label class="question-item"><input type="radio" name="q" value="${q}" onchange="check()"> ${q}</label>`;
+  });
+  document.getElementById("questionList").innerHTML = html;
+
+  // 初始化地图
+  if(!map) initMap();
+  resetMap();
+  check();
+}
+
+// 初始化百度地图
+function initMap(){
+  try{
+    map = new BMapGL.Map("map");
+    let pt = new BMapGL.Point(113.5816,33.5167);
+    map.centerAndZoom(pt,17);
+    map.enableScrollWheelZoom(true);
+    map.addEventListener("click",(e)=>{
+      if(marker) map.removeOverlay(marker);
+      marker = new BMapGL.Marker(e.point);
+      map.addOverlay(marker);
+      hasLocation = true;
+      // --- 新增：记录坐标 ---
+      currentLng = e.point.lng;
+      currentLat = e.point.lat;
+      // --------------------
+      check();
+    });
+  }catch(e){}
+}
+
+function resetMap(){
+  hasLocation = false;
+  // --- 新增：重置坐标 ---
+  currentLng = 0;
+  currentLat = 0;
+  // --------------------
+  if(marker){map.removeOverlay(marker);marker=null}
+  document.getElementById("address").value = "";
+  document.getElementById("photoPrev").style.display = "none";
+  hasPhoto = false;
+  document.getElementById("file").value = "";
+}
+
+// 照片预览
+function showPhoto(){
+  let file = document.getElementById("file").files[0];
+  if(!file) return;
+  let reader = new FileReader();
+  reader.onload = (e)=>{
+    document.getElementById("photoImg").src = e.target.result;
+    document.getElementById("photoPrev").style.display = "block";
+    hasPhoto = true;
+    check();
+  }
+  reader.readAsDataURL(file);
+}
+
+// 校验提交条件
+function check(){
+  let addr = document.getElementById("address").value.trim();
+  let hasQ = document.querySelector('input[name="q"]:checked');
+  let ok = addr && hasQ && hasPhoto && hasLocation;
+  document.getElementById("submitBtn").disabled = !ok;
+  document.getElementById("warnTip").style.display = ok ? "none" : "block";
+}
+
+// ********** 核心修改：全新的提交函数，数据发送至云端 **********
+async function doSubmit() {
+  const submitBtn = document.getElementById('submitBtn');
+  const originalText = submitBtn.innerText;
+
+  // 1. 防止重复提交
+  if (!submitBtn.disabled) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = '提交中...';
+  } else {
+    return;
+  }
+
+  // 2. 收集表单数据
+  const dimName = dimData[currentDim].name;
+  const qText = document.querySelector('input[name="q"]:checked').value;
+  const addr = document.getElementById("address").value.trim();
+  const fileInput = document.getElementById('file');
+
+  // 3. 将照片转为Base64（用于存入Airtable）
+  let photoBase64 = '';
+  if (fileInput.files[0]) {
+    photoBase64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(fileInput.files[0]);
+    });
+  }
+
+  // 4. 组装发送数据
+  const postData = {
+    维度: dimName,
+    问题: qText,
+    位置: addr,
+    经度: currentLng, // 使用记录的坐标
+    纬度: currentLat,
+    照片: photoBase64, // Base64字符串
+    提交时间: new Date().toISOString()
+  };
+
+  // 5. 发送数据到 Vercel 云函数接口 (/api/submit)
+  try {
+    const response = await fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postData)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      // 6. 提交成功，跳转页面
+      document.getElementById("collectPage").style.display = "none";
+      document.getElementById("successPage").style.display = "flex";
+    } else {
+      // 7. 服务器返回错误
+      alert(`提交失败：${result.message}`);
+      submitBtn.disabled = false;
+      submitBtn.innerText = originalText;
+    }
+  } catch (error) {
+    // 8. 网络请求失败
+    console.error('提交出错:', error);
+    alert('网络错误，提交失败，请检查网络后重试。');
+    submitBtn.disabled = false;
+    submitBtn.innerText = originalText;
+  }
+}
+// ********** 核心修改结束 **********
+
+// 返回首页
+function goBack(){
+  document.getElementById("homePage").style.display = "block";
+  document.getElementById("collectPage").style.display = "none";
+  document.getElementById("successPage").style.display = "none";
+}
+</script>
+</body>
+</html>
