@@ -1,1638 +1,309 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>舞钢市城市体检信息采集平台</title>
-    <!-- 百度地图API（替换为你的AK） -->
-    <script type="text/javascript" src="http://api.map.baidu.com/api?v=3.0&ak=你的百度地图AK"></script>
-    <!-- ECharts数据可视化 -->
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-    <!-- 字体图标 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/iconfont-iconpark@1.4.2/dist/css/iconpark.css">
-    <style>
-        /* ===================== 全局样式 ===================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Microsoft Yahei", "PingFang SC", "Helvetica Neue", sans-serif;
-            transition: all 0.3s ease;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>舞钢市城市体检信息采集</title>
+<script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&type=webgl&ak=C6qUhdM0IXx6bmYS4QekXMlizJXjIJSi"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif}
+body{background:#f5f7fa;padding:15px;min-height:100vh}
+.home{max-width:750px;margin:0 auto;padding:30px 0}
+.title{font-size:30px;font-weight:700;color:#2F5597;text-align:center;margin-bottom:40px}
+.dim-btns{display:flex;flex-direction:column;gap:16px}
+.dim-btn{height:70px;border:none;border-radius:10px;background:#2F5597;color:#fff;font-size:18px;font-weight:500;cursor:pointer}
+.dim-btn:hover{background:#23447c}
 
-        :root {
-            /* 亮色主题变量 */
-            --primary-color: #2f5597;
-            --primary-light: #4a72b5;
-            --primary-dark: #1e3d70;
-            --secondary-color: #ff7e36;
-            --bg-color: #f8f9fa;
-            --card-bg: #ffffff;
-            --text-primary: #333333;
-            --text-secondary: #666666;
-            --text-light: #999999;
-            --border-color: #e5e9f2;
-            --success-color: #52c41a;
-            --warning-color: #faad14;
-            --danger-color: #f5222d;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --radius-xl: 16px;
-        }
+/* 采集页 */
+.collect{max-width:750px;margin:0 auto;display:none}
+.back-btn{width:100%;height:50px;border:none;border-radius:8px;background:#666;color:#fff;font-size:16px;margin:10px 0 20px;cursor:pointer}
+.current-dim{font-size:18px;color:#2F5597;font-weight:700;text-align:center;margin-bottom:10px}
+.map-box{width:100%;height:380px;border-radius:10px;background:#fff;border:1px solid #eee;margin-bottom:15px}
+.tip{font-size:14px;color:#666;text-align:center;margin-bottom:10px}
+.warn{font-size:12px;color:#f56a00;text-align:center;margin-bottom:15px;display:none}
 
-        .dark-theme {
-            /* 暗色主题变量 */
-            --primary-color: #4e78c7;
-            --primary-light: #6a8fda;
-            --primary-dark: #3058a0;
-            --secondary-color: #ff9559;
-            --bg-color: #1a1a1a;
-            --card-bg: #242424;
-            --text-primary: #f5f5f5;
-            --text-secondary: #d0d0d0;
-            --text-light: #909090;
-            --border-color: #333333;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.3);
-        }
+/* 问题列表（滚动） */
+.question-group{background:#fff;border-radius:10px;padding:20px;margin-bottom:15px;max-height:360px;overflow-y:auto}
+.question-title{font-size:16px;color:#333;margin-bottom:12px;font-weight:500}
+.question-item{display:block;margin:10px 0;font-size:15px;line-height:1.5}
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+/* 表单 */
+.form-item{background:#fff;border-radius:10px;padding:18px;margin-bottom:15px}
+.form-label{font-size:16px;color:#333;margin-bottom:8px;display:block}
+.form-input{width:100%;height:46px;border:1px solid #eee;border-radius:6px;padding:0 14px;font-size:15px}
+.photo-btn{width:100%;height:46px;border:none;border-radius:6px;background:#2F5597;color:#fff;font-size:15px;cursor:pointer;margin-top:8px}
+.photo-prev{width:140px;height:140px;border:1px solid #eee;border-radius:6px;margin-top:10px;display:none}
+.photo-prev img{width:100%;height:100%;object-fit:cover;border-radius:6px}
 
-        /* 滚动条美化 */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--border-color);
-            border-radius: var(--radius-sm);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--text-light);
-            border-radius: var(--radius-sm);
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
-        }
+/* 提交按钮 */
+.submit-btn{width:100%;height:55px;border:none;border-radius:10px;background:#2F5597;color:#fff;font-size:18px;font-weight:500;cursor:pointer;margin-top:10px}
+.submit-btn:disabled{background:#ccc}
 
-        /* 通用按钮样式 */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border: none;
-            border-radius: var(--radius-md);
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            outline: none;
-            user-select: none;
-            background-color: var(--primary-color);
-            color: #ffffff;
-            box-shadow: var(--shadow);
-        }
-        .btn:hover {
-            background-color: var(--primary-light);
-            box-shadow: var(--shadow-hover);
-            transform: translateY(-2px);
-        }
-        .btn:active {
-            transform: translateY(0);
-        }
-        .btn:disabled {
-            background-color: var(--text-light);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        .btn-secondary {
-            background-color: var(--secondary-color);
-        }
-        .btn-secondary:hover {
-            background-color: #ff9559;
-        }
-        .btn-success {
-            background-color: var(--success-color);
-        }
-        .btn-success:hover {
-            background-color: #67d92f;
-        }
-        .btn-danger {
-            background-color: var(--danger-color);
-        }
-        .btn-danger:hover {
-            background-color: #ff4d4f;
-        }
-        .btn-outline {
-            background-color: transparent;
-            border: 1px solid var(--primary-color);
-            color: var(--primary-color);
-        }
-        .btn-outline:hover {
-            background-color: var(--primary-color);
-            color: #ffffff;
-        }
-        .btn-sm {
-            padding: 8px 16px;
-            font-size: 14px;
-        }
-        .btn-lg {
-            padding: 16px 32px;
-            font-size: 18px;
-        }
-
-        /* 通用卡片样式 */
-        .card {
-            background-color: var(--card-bg);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow);
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        .card:hover {
-            box-shadow: var(--shadow-hover);
-        }
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .card-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .card-body {
-            padding: 8px 0;
-        }
-        .card-footer {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 16px;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        /* 表单控件样式 */
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        .form-label-required::after {
-            content: "*";
-            color: var(--danger-color);
-            margin-left: 4px;
-        }
-        .form-control {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            font-size: 16px;
-            color: var(--text-primary);
-            background-color: var(--card-bg);
-            outline: none;
-        }
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(47, 85, 151, 0.1);
-        }
-        .form-control::placeholder {
-            color: var(--text-light);
-        }
-        .form-text {
-            margin-top: 4px;
-            font-size: 14px;
-            color: var(--text-light);
-        }
-        .form-error {
-            color: var(--danger-color);
-            font-size: 14px;
-            margin-top: 4px;
-            display: none;
-        }
-        .form-control.error {
-            border-color: var(--danger-color);
-        }
-        .form-control.error + .form-error {
-            display: block;
-        }
-
-        /* 单选/复选框样式 */
-        .radio-group, .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-top: 8px;
-        }
-        .radio-item, .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .radio-item input, .checkbox-item input {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--primary-color);
-        }
-
-        /* 加载动画 */
-        .loader {
-            width: 48px;
-            height: 48px;
-            border: 5px solid var(--border-color);
-            border-bottom-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-            display: none;
-        }
-        .loader.show {
-            display: block;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* 弹窗样式 */
-        .modal-mask {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        .modal-mask.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        .modal-container {
-            background-color: var(--card-bg);
-            border-radius: var(--radius-lg);
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-            transform: translateY(-20px);
-            transition: all 0.3s ease;
-        }
-        .modal-mask.show .modal-container {
-            transform: translateY(0);
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .modal-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--primary-color);
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--text-light);
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-        }
-        .modal-close:hover {
-            background-color: var(--border-color);
-            color: var(--text-primary);
-        }
-        .modal-body {
-            padding: 24px;
-        }
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 16px;
-            padding: 16px 24px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        /* 提示消息样式 */
-        .message {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 16px 24px;
-            border-radius: var(--radius-md);
-            background-color: var(--card-bg);
-            box-shadow: var(--shadow-hover);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 9998;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
-        }
-        .message.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        .message-icon {
-            font-size: 20px;
-        }
-        .message-success {
-            border-left: 4px solid var(--success-color);
-        }
-        .message-success .message-icon {
-            color: var(--success-color);
-        }
-        .message-error {
-            border-left: 4px solid var(--danger-color);
-        }
-        .message-error .message-icon {
-            color: var(--danger-color);
-        }
-        .message-warning {
-            border-left: 4px solid var(--warning-color);
-        }
-        .message-warning .message-icon {
-            color: var(--warning-color);
-        }
-
-        /* ===================== 布局样式 ===================== */
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* 侧边栏样式 */
-        .sidebar {
-            width: 260px;
-            background-color: var(--card-bg);
-            box-shadow: var(--shadow);
-            padding: 24px 0;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            z-index: 100;
-        }
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 24px 24px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 16px;
-        }
-        .sidebar-logo img {
-            width: 48px;
-            height: 48px;
-            margin-right: 12px;
-        }
-        .sidebar-logo-text {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--primary-color);
-            line-height: 1.2;
-        }
-        .sidebar-menu {
-            list-style: none;
-            padding: 0 16px;
-            flex: 1;
-        }
-        .sidebar-menu-item {
-            margin-bottom: 8px;
-            border-radius: var(--radius-md);
-        }
-        .sidebar-menu-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            color: var(--text-primary);
-            text-decoration: none;
-            font-size: 16px;
-            border-radius: var(--radius-md);
-        }
-        .sidebar-menu-link:hover {
-            background-color: rgba(47, 85, 151, 0.05);
-            color: var(--primary-color);
-        }
-        .sidebar-menu-link.active {
-            background-color: var(--primary-color);
-            color: #ffffff;
-        }
-        .sidebar-menu-icon {
-            font-size: 20px;
-            width: 24px;
-            text-align: center;
-        }
-        .sidebar-footer {
-            padding: 16px 24px;
-            border-top: 1px solid var(--border-color);
-            margin-top: 16px;
-        }
-        .sidebar-user {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .sidebar-user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        .sidebar-user-info {
-            flex: 1;
-        }
-        .sidebar-user-name {
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        .sidebar-user-role {
-            font-size: 12px;
-            color: var(--text-light);
-        }
-        .theme-switch {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
-            background-color: var(--border-color);
-            border-radius: var(--radius-md);
-            margin-bottom: 8px;
-        }
-        .theme-switch-text {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        .theme-switch-toggle {
-            position: relative;
-            width: 40px;
-            height: 20px;
-            background-color: var(--text-light);
-            border-radius: 10px;
-            cursor: pointer;
-        }
-        .theme-switch-toggle::after {
-            content: "";
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background-color: #ffffff;
-            top: 2px;
-            left: 2px;
-            transition: all 0.3s ease;
-        }
-        .theme-switch-toggle.active {
-            background-color: var(--primary-color);
-        }
-        .theme-switch-toggle.active::after {
-            left: 22px;
-        }
-
-        /* 主内容区样式 */
-        .main-content {
-            flex: 1;
-            margin-left: 260px;
-            padding: 24px;
-        }
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .page-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .page-actions {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        /* 响应式布局 */
-        @media (max-width: 992px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0;
-            }
-            .mobile-menu-btn {
-                display: block !important;
-            }
-        }
-        .mobile-menu-btn {
-            display: none;
-            width: 40px;
-            height: 40px;
-            background-color: var(--primary-color);
-            color: #ffffff;
-            border: none;
-            border-radius: var(--radius-md);
-            font-size: 20px;
-            cursor: pointer;
-            position: fixed;
-            top: 24px;
-            left: 24px;
-            z-index: 101;
-        }
-
-        /* ===================== 页面特有样式 ===================== */
-        /* 首页样式 */
-        .home-banner {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-            border-radius: var(--radius-xl);
-            padding: 48px 32px;
-            margin-bottom: 32px;
-            color: #ffffff;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .home-banner::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-            opacity: 0.2;
-        }
-        .home-banner-title {
-            font-size: 48px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .home-banner-desc {
-            font-size: 18px;
-            max-width: 800px;
-            margin: 0 auto 24px;
-            line-height: 1.6;
-        }
-        .home-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-        .home-stat-card {
-            background-color: var(--card-bg);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow);
-            padding: 24px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .home-stat-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background-color: var(--primary-color);
-        }
-        .home-stat-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 8px;
-        }
-        .home-stat-label {
-            font-size: 16px;
-            color: var(--text-secondary);
-        }
-        .home-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-            gap: 24px;
-        }
-        .home-card-item {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        .home-card-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background-color: rgba(47, 85, 151, 0.1);
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            margin-bottom: 16px;
-        }
-        .home-card-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-        }
-        .home-card-desc {
-            font-size: 16px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 16px;
-            flex: 1;
-        }
-
-        /* 采集页样式 */
-        .collection-page {
-            display: none;
-        }
-        .collection-page.show {
-            display: block;
-        }
-        .map-container {
-            width: 100%;
-            height: 480px;
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            margin-bottom: 24px;
-            position: relative;
-        }
-        .map-tip {
-            position: absolute;
-            top: 16px;
-            left: 16px;
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            font-size: 14px;
-            color: var(--text-primary);
-            box-shadow: var(--shadow);
-            z-index: 10;
-        }
-        .map-controls {
-            position: absolute;
-            bottom: 16px;
-            right: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 10;
-        }
-        .map-control-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #ffffff;
-            border: none;
-            box-shadow: var(--shadow);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
-            color: var(--primary-color);
-        }
-        .map-control-btn:hover {
-            background-color: var(--primary-color);
-            color: #ffffff;
-        }
-
-        /* 照片上传样式 */
-        .photo-upload {
-            border: 2px dashed var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 32px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 16px;
-        }
-        .photo-upload:hover {
-            border-color: var(--primary-color);
-            background-color: rgba(47, 85, 151, 0.05);
-        }
-        .photo-upload-icon {
-            font-size: 48px;
-            color: var(--text-light);
-            margin-bottom: 16px;
-        }
-        .photo-upload-text {
-            font-size: 16px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        .photo-upload-hint {
-            font-size: 14px;
-            color: var(--text-light);
-        }
-        .photo-preview-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
-        }
-        .photo-preview-item {
-            position: relative;
-            width: 100%;
-            padding-top: 100%;
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            background-color: var(--border-color);
-        }
-        .photo-preview-img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .photo-preview-remove {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background-color: var(--danger-color);
-            color: #ffffff;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            box-shadow: var(--shadow);
-        }
-
-        /* 数据预览页样式 */
-        .data-page {
-            display: none;
-        }
-        .data-page.show {
-            display: block;
-        }
-        .data-filter {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 24px;
-            align-items: center;
-        }
-        .data-filter-item {
-            flex: 1;
-            min-width: 200px;
-        }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: var(--card-bg);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-        }
-        .data-table th, .data-table td {
-            padding: 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .data-table th {
-            background-color: rgba(47, 85, 151, 0.05);
-            font-weight: 600;
-            color: var(--primary-color);
-        }
-        .data-table tr:hover {
-            background-color: rgba(47, 85, 151, 0.02);
-        }
-        .data-table-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .chart-container {
-            width: 100%;
-            height: 400px;
-            margin-top: 24px;
-        }
-
-        /* 关于页样式 */
-        .about-page {
-            display: none;
-        }
-        .about-page.show {
-            display: block;
-        }
-        .about-content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .about-section {
-            margin-bottom: 32px;
-        }
-        .about-section-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--primary-color);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .about-section-content {
-            font-size: 16px;
-            line-height: 1.8;
-            color: var(--text-secondary);
-        }
-        .about-contact {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 24px;
-            margin-top: 16px;
-        }
-        .about-contact-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px;
-            background-color: rgba(47, 85, 151, 0.05);
-            border-radius: var(--radius-md);
-        }
-        .about-contact-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        .about-contact-info {
-            flex: 1;
-        }
-        .about-contact-label {
-            font-size: 14px;
-            color: var(--text-light);
-            margin-bottom: 4px;
-        }
-        .about-contact-value {
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        /* 空数据样式 */
-        .empty-data {
-            text-align: center;
-            padding: 64px 24px;
-            color: var(--text-light);
-        }
-        .empty-data-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-        }
-        .empty-data-text {
-            font-size: 18px;
-            margin-bottom: 8px;
-        }
-        .empty-data-desc {
-            font-size: 16px;
-            margin-bottom: 24px;
-        }
-
-        /* 成功页样式 */
-        .success-page {
-            display: none;
-            text-align: center;
-            padding: 64px 24px;
-        }
-        .success-page.show {
-            display: block;
-        }
-        .success-icon {
-            font-size: 96px;
-            color: var(--success-color);
-            margin-bottom: 24px;
-        }
-        .success-title {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 16px;
-        }
-        .success-desc {
-            font-size: 18px;
-            color: var(--text-secondary);
-            margin-bottom: 32px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-    </style>
+/* 成功页 */
+.success{max-width:500px;margin:0 auto;display:none;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;text-align:center}
+.success-icon{font-size:70px;color:#2F5597;margin-bottom:20px}
+.success-text{font-size:24px;font-weight:700;color:#2F5597;margin-bottom:10px}
+.success-desc{font-size:16px;color:#666;margin-bottom:30px}
+</style>
 </head>
+
 <body>
-    <!-- 移动端菜单按钮 -->
-    <button class="mobile-menu-btn" onclick="toggleSidebar()">
-        <i class="iconpark-icon" icon-name="menu"></i>
-    </button>
 
-    <!-- 整体容器 -->
-    <div class="app-container">
-        <!-- 侧边栏 -->
-        <aside class="sidebar">
-            <div class="sidebar-logo">
-                <div style="width: 48px; height: 48px; border-radius: 8px; background: linear-gradient(135deg, #2f5597, #4a72b5); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">
-                    <i class="iconpark-icon" icon-name="city"></i>
-                </div>
-                <div class="sidebar-logo-text">
-                    舞钢市<br>城市体检平台
-                </div>
-            </div>
+<!-- 首页 -->
+<div class="home" id="homePage">
+  <div class="title">舞钢市城市体检信息采集</div>
+  <div class="dim-btns">
+    <button class="dim-btn" onclick="openPage('housing')">一、住房维度（单栋住宅）</button>
+    <button class="dim-btn" onclick="openPage('community')">二、小区（社区）维度</button>
+    <button class="dim-btn" onclick="openPage('street')">三、街区（街道办）维度</button>
+    <button class="dim-btn" onclick="openPage('city')">四、县城（城区）维度</button>
+  </div>
+</div>
 
-            <ul class="sidebar-menu">
-                <li class="sidebar-menu-item">
-                    <a href="#home" class="sidebar-menu-link active" onclick="switchPage('home')">
-                        <i class="iconpark-icon sidebar-menu-icon" icon-name="home"></i>
-                        <span>首页</span>
-                    </a>
-                </li>
-                <li class="sidebar-menu-item">
-                    <a href="#collection" class="sidebar-menu-link" onclick="switchPage('collection')">
-                        <i class="iconpark-icon sidebar-menu-icon" icon-name="form"></i>
-                        <span>信息采集</span>
-                    </a>
-                </li>
-                <li class="sidebar-menu-item">
-                    <a href="#data" class="sidebar-menu-link" onclick="switchPage('data')">
-                        <i class="iconpark-icon sidebar-menu-icon" icon-name="chart"></i>
-                        <span>数据预览</span>
-                    </a>
-                </li>
-                <li class="sidebar-menu-item">
-                    <a href="#about" class="sidebar-menu-link" onclick="switchPage('about')">
-                        <i class="iconpark-icon sidebar-menu-icon" icon-name="info"></i>
-                        <span>关于我们</span>
-                    </a>
-                </li>
-                <li class="sidebar-menu-item">
-                    <a href="#help" class="sidebar-menu-link" onclick="openModal('helpModal')">
-                        <i class="iconpark-icon sidebar-menu-icon" icon-name="help"></i>
-                        <span>帮助中心</span>
-                    </a>
-                </li>
-                <li class="sidebar-menu-item">
-                    <a href="#privacy" class="sidebar-menu-link" onclick="openModal('privacyModal')">
-                        <i class="iconpark-icon sidebar-menu-icon" icon-name="shield"></i>
-                        <span>隐私政策</span>
-                    </a>
-                </li>
-            </ul>
+<!-- 采集页 -->
+<div class="collect" id="collectPage">
+  <button class="back-btn" onclick="goBack()">← 返回首页</button>
+  <div class="current-dim" id="showDim"></div>
+  <div class="tip">点击地图定位 → 选择问题 → 填写小区/位置 → 上传照片 → 提交</div>
+  <div class="warn" id="warnTip">请完成：定位 + 选择问题 + 小区/位置 + 照片</div>
+  <div class="map-box" id="map"></div>
 
-            <div class="sidebar-footer">
-                <div class="sidebar-user">
-                    <div class="sidebar-user-avatar">
-                        采
-                    </div>
-                    <div class="sidebar-user-info">
-                        <div class="sidebar-user-name">信息采集员</div>
-                        <div class="sidebar-user-role">普通用户</div>
-                    </div>
-                </div>
+  <!-- 问题列表 -->
+  <div class="question-group" id="questionList"></div>
 
-                <div class="theme-switch">
-                    <span class="theme-switch-text">暗色模式</span>
-                    <div class="theme-switch-toggle" id="themeToggle" onclick="toggleTheme()"></div>
-                </div>
+  <!-- 小区/位置 -->
+  <div class="form-item">
+    <label class="form-label">所在小区 / 具体位置（必填）</label>
+    <input class="form-input" id="address" oninput="check()" placeholder="请输入小区名称或详细位置">
+  </div>
 
-                <button class="btn btn-outline btn-sm w-100" onclick="clearAllData()">
-                    <i class="iconpark-icon" icon-name="delete"></i>
-                    清空本地数据
-                </button>
-            </div>
-        </aside>
+  <!-- 拍照 -->
+  <div class="form-item">
+    <label class="form-label">现场照片（必填）</label>
+    <input type="file" id="file" accept="image/*" style="display:none" onchange="showPhoto()">
+    <button class="photo-btn" onclick="document.getElementById('file').click()">📷 拍摄 / 上传照片</button>
+    <div class="photo-prev" id="photoPrev"><img id="photoImg"></div>
+  </div>
 
-        <!-- 主内容区 -->
-        <main class="main-content">
-            <!-- 首页 -->
-            <div id="homePage" class="page-content">
-                <div class="home-banner">
-                    <h1 class="home-banner-title">舞钢市城市体检信息采集平台</h1>
-                    <p class="home-banner-desc">
-                        为全面掌握舞钢市城市建设现状，精准识别城市发展中的问题与短板，
-                        特搭建本信息采集平台，面向社会公众征集住房、小区、社区、街区等方面的问题线索，
-                        助力城市精细化管理与高质量发展。
-                    </p>
-                    <button class="btn btn-lg btn-secondary" onclick="switchPage('collection')">
-                        <i class="iconpark-icon" icon-name="edit"></i>
-                        立即采集信息
-                    </button>
-                </div>
+  <button class="submit-btn" id="submitBtn" disabled onclick="doSubmit()">提交信息</button>
+</div>
 
-                <div class="home-stats">
-                    <div class="home-stat-card">
-                        <div class="home-stat-value" id="totalRecords">0</div>
-                        <div class="home-stat-label">累计采集记录</div>
-                    </div>
-                    <div class="home-stat-card">
-                        <div class="home-stat-value" id="housingProblems">0</div>
-                        <div class="home-stat-label">住房问题</div>
-                    </div>
-                    <div class="home-stat-card">
-                        <div class="home-stat-value" id="communityProblems">0</div>
-                        <div class="home-stat-label">小区问题</div>
-                    </div>
-                    <div class="home-stat-card">
-                        <div class="home-stat-value" id="streetProblems">0</div>
-                        <div class="home-stat-label">街区问题</div>
-                    </div>
-                </div>
+<!-- 成功页 -->
+<div class="success" id="successPage">
+  <div class="success-icon">✓</div>
+  <div class="success-text">提交成功</div>
+  <div class="success-desc">感谢参与舞钢市城市体检信息采集</div>
+  <button class="back-btn" onclick="goBack()">返回首页</button>
+</div>
 
-                <div class="home-cards">
-                    <!-- 住房卡片 -->
-                    <div class="card home-card-item">
-                        <div class="card-body">
-                            <div class="home-card-icon">
-                                <i class="iconpark-icon" icon-name="house"></i>
-                            </div>
-                            <h3 class="home-card-title">住房</h3>
-                            <p class="home-card-desc">
-                                针对居民住房内部出现的墙体开裂、燃气老化、飘窗安全等问题进行采集，
-                                精准定位问题位置，上传现场照片，为住房安全排查提供数据支撑。
-                            </p>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn btn-outline" onclick="gotoCollection('住房问题')">
-                                <i class="iconpark-icon" icon-name="arrow-right"></i>
-                                开始采集
-                            </button>
-                        </div>
-                    </div>
+<script>
+// 四个维度的全部问题（完全按你提供的原文）
+const dimData = {
+  housing: {
+    name: "住房维度（单栋住宅现状）",
+    questions: [
+      "混凝土结构构件（承重墙体、楼板、结构梁）是否有肉眼清晰可见的贯通裂缝",
+      "是否存在违规拆除结构承重构件（如户内承重墙、底商/地库结构柱、阳台承重墙垛）",
+      "砖混结构主体是否出现砖体缺棱掉角（多处）、表面通长裂缝，砂浆呈粉末状、砖与砂浆间有较大缝隙",
+      "住宅燃气立管、引入管、水平管运行年限是否满20年，且存在锈蚀严重、破损现象",
+      "楼梯踏步是否有缺损（超过10cm）、扶手是否松动损坏、公共区域照明是否缺失、安全护栏是否破损",
+      "通风井道、排风烟道是否存在堵塞，导致通风不畅或倒风串味",
+      "高层住宅消防门是否损坏或无法正常关闭",
+      "高层住宅消火栓是否无日常维护、老化损坏或无水",
+      "公共区域是否缺失灭火器，或灭火器未设置保护设施（灭火器箱/挂装）",
+      "消防安全出口指示灯是否损坏或缺失",
+      "消防楼梯、楼道、管道井等公共空间是否被占用堆放杂物",
+      "外墙装饰材料、保温材料是否存在开裂、损坏或脱落",
+      "外墙悬挂设施（如空调外机、广告牌）是否存在过大过高、损坏或松脱",
+      "公共区域（走廊、楼梯间）门窗玻璃是否破损、脱落",
+      "屋面是否排水不畅、存在漏水痕迹",
+      "外墙内侧或地下室是否有渗水、漏水、积水现象",
+      "住宅是否缺少独立厨房或卫生间（非成套特征）",
+      "住宅内部采光、通风是否存在明显不足",
+      "给水管线是否有跑冒滴漏，排水管线是否老化破损、渗漏堵塞",
+      "冬季采暖区域住宅是否存在室内温度不达标现象",
+      "电力、电信管线是否存在老化破损、裸露或私搭乱接",
+      "4-6层未装电梯的多层住宅，楼梯间一侧是否预留≥4米电梯加装场地",
+      "住宅单元出入口是否未进行无障碍改造、地面未做防滑处理",
+      "楼梯间是否未沿墙加装扶手",
+      "特殊困难老年人家庭住宅是否未实施适老化改造",
+      "2000年前建设的住宅是否未做外墙保温、未采用保温隔热窗，且具备节能改造价值"
+    ]
+  },
+  community: {
+    name: "小区（社区）维度（居住片区配套与环境）",
+    questions: [
+      "小区内是否配建养老服务设施，是否提供助餐、助浴、康复护理等服务",
+      "小区内是否配建幼儿园，园区环境与设施是否完好",
+      "小区内是否配建社区卫生服务站，是否配备常用诊疗器械与基础药品",
+      "小区内车辆是否存在占用消防通道停放的现象",
+      "小区内是否设置固定停车区域，车辆停放是否有序",
+      "小区内是否配建新能源汽车公共充电桩，已配建充电桩是否无法正常使用",
+      "小区内是否配建电动自行车集中室外充电设施",
+      "是否存在电动自行车乱拉飞线充电、占用楼栋出入口或消防通道",
+      "小区内是否配建公共活动场地（含绿地、健身场地），是否配备儿童、老年、健身设施",
+      "小区步行道路面是否破损、雨后积水、铺装不防滑",
+      "步行道是否设置无障碍通道（缘石坡道、扶手）",
+      "小区内是否设置垃圾分类收集设施，是否有清晰分类标识",
+      "小区内是否配建公共厕所，设施是否完好、有无日常保洁、是否有异味",
+      "小区是否有专业化物业管理，是否及时处理居民报修",
+      "小区内是否安装智能信包箱、智能快递柜",
+      "小区出入口是否配备门禁、视频监控等智能安防设施",
+      "小区公共绿地是否有杂物堆积、私搭乱建，植被长势是否良好",
+      "小区内管线管道（给排水、电力、电信）是否外露杂乱",
+      "小区内是否存在公共楼道停放自行车、电动车及违规充电",
+      "小区内非成套住宅的分布及功能缺失情况"
+    ]
+  },
+  street: {
+    name: "街区（街道办）维度（公共空间与设施）",
+    questions: [
+      "街区内是否配建多功能运动场地，是否向公众开放、设施是否完好",
+      "多功能运动场地是否支持两种及以上体育项目转换使用",
+      "街区内是否配建文化活动中心，是否划分青少年、老年活动功能区域",
+      "文化活动中心是否免费开放，是否定期开展活动",
+      "街区300米/500米半径内是否有公园、绿地等绿化活动场地",
+      "绿化活动场地是否整洁，有无杂物堆积、植被修剪不及时",
+      "街区道路是否存在机动车无序停放（≥3辆）、占用绿化带或人行道",
+      "街区道路是否存在非机动车无序停放（≥10辆）、占用通行空间",
+      "街区道路是否存在废弃线缆、线杆松动歪斜",
+      "是否存在乱拉空中线路、飞线充电",
+      "线路交接箱体是否缺损、锈蚀、箱门敞开",
+      "街区500米范围内是否有农贸市场、生鲜超市",
+      "街区步行道是否连贯，有无断头路",
+      "街区夜间照明是否充足，有无明显盲区",
+      "是否存在流动摊贩占道经营影响通行",
+      "街区公共区域是否有垃圾堆积、异味扩散",
+      "街区内历史建筑是否存在私搭乱建、破坏风貌",
+      "街区道路路面是否坑洼、裂缝，井盖是否缺失或松动",
+      "街区内公共服务设施指示牌是否清晰",
+      "街区空中线缆是否规整或入地，是否杂乱无章"
+    ]
+  },
+  city: {
+    name: "县城（城区）维度（全域公共设施与整体风貌）",
+    questions: [
+      "县城公共供水管网是否存在跑冒滴漏、管线外露破损",
+      "县城污水处理设施周边是否有异味扩散、管道渗漏痕迹",
+      "县城道路是否存在断头路、错口路，支路衔接是否连贯",
+      "新建建筑外墙是否标注绿色建筑相关标识",
+      "新建18层及以上住宅消防登高面是否被占用、消防通道是否狭窄",
+      "18层及以上住宅市政配套管线布置是否杂乱",
+      "历史文化街区传统风貌是否存在破坏现象",
+      "历史建筑是否长期闲置（超6个月），有无活化利用",
+      "县城文物建筑、古树名木是否有破损、破坏痕迹",
+      "普通高中校舍、场地、宿舍是否设施破损、空间拥挤",
+      "中学班级是否存在大班额现象",
+      "县级医疗卫生机构是否正常运营、设施完备",
+      "集贸市场是否通道狭窄、地面脏乱、异味明显",
+      "集贸市场是否消防设施缺失、灭火器过期、通道堵塞",
+      "县城公交是否覆盖周边行政村，站点设施是否破损",
+      "大雨后县城是否存在易涝积水点",
+      "老旧市政燃气管网是否裸露、锈蚀严重、接口松动",
+      "县城消防站周边是否有遮挡、通道拥堵",
+      "市政消火栓是否锈蚀、破损、被遮挡",
+      "县城是否设置应急避难场所，有无标识、是否被占用",
+      "建筑施工危大工程是否配备安全监测设施",
+      "县城是否存在架空线缆杂乱、线杆歪斜、箱体破损",
+      "人均避难场所是否设施老化、无应急水电",
+      "县城历史街区、历史建筑是否悬挂保护标识牌",
+      "县城道路网密度是否均衡，主次干路与支路衔接顺畅"
+    ]
+  }
+};
 
-                    <!-- 小区（社区）卡片 -->
-                    <div class="card home-card-item">
-                        <div class="card-body">
-                            <div class="home-card-icon">
-                                <i class="iconpark-icon" icon-name="community"></i>
-                            </div>
-                            <h3 class="home-card-title">小区（社区）</h3>
-                            <p class="home-card-desc">
-                                聚焦小区公共区域设施、环境、安全等方面的问题，如公共墙体开裂、
-                                燃气管道老化、飘窗安全隐患等，助力小区精细化管理。
-                            </p>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn btn-outline" onclick="gotoCollection('小区问题')">
-                                <i class="iconpark-icon" icon-name="arrow-right"></i>
-                                开始采集
-                            </button>
-                        </div>
-                    </div>
+let currentDim = "";
+let map = null, marker = null;
+let hasLocation = false, hasPhoto = false;
 
-                    <!-- 街区卡片 -->
-                    <div class="card home-card-item">
-                        <div class="card-body">
-                            <div class="home-card-icon">
-                                <i class="iconpark-icon" icon-name="street"></i>
-                            </div>
-                            <h3 class="home-card-title">街区</h3>
-                            <p class="home-card-desc">
-                                针对街区范围内的公共服务、基础设施、环境治理等问题进行采集，
-                                为街区治理和服务提升提供决策依据。
-                            </p>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn btn-outline" onclick="gotoCollection('街区问题')">
-                                <i class="iconpark-icon" icon-name="arrow-right"></i>
-                                开始采集
-                            </button>
-                        </div>
-                    </div>
+// 打开对应维度
+function openPage(dim){
+  currentDim = dim;
+  document.getElementById("homePage").style.display = "none";
+  document.getElementById("collectPage").style.display = "block";
+  document.getElementById("successPage").style.display = "none";
+  document.getElementById("showDim").innerText = dimData[dim].name;
 
-                    <!-- 城区卡片 -->
-                    <div class="card home-card-item">
-                        <div class="card-body">
-                            <div class="home-card-icon">
-                                <i class="iconpark-icon" icon-name="city"></i>
-                            </div>
-                            <h3 class="home-card-title">城区</h3>
-                            <p class="home-card-desc">
-                                面向城市城区范围内的公共设施、市容环境、交通出行等综合性问题进行采集，
-                                助力提升城市整体品质和居民生活体验。
-                            </p>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn btn-outline" onclick="gotoCollection('城区问题')">
-                                <i class="iconpark-icon" icon-name="arrow-right"></i>
-                                开始采集
-                            </button>
-                        </div>
-                    </div>
-                </div>
+  // 渲染问题
+  let html = `<div class="question-title">请选择当前问题：</div>`;
+  dimData[dim].questions.forEach((q,i)=>{
+    html += `<label class="question-item"><input type="radio" name="q" value="${q}" onchange="check()"> ${q}</label>`;
+  });
+  document.getElementById("questionList").innerHTML = html;
 
-                <div class="card" style="margin-top: 32px;">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="iconpark-icon" icon-name="chart-line"></i>
-                            采集数据统计
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div id="statsChart" class="chart-container"></div>
-                    </div>
-                </div>
-            </div>
+  // 初始化地图
+  if(!map) initMap();
+  resetMap();
+  check();
+}
 
-            <!-- 信息采集页 -->
-            <div id="collectionPage" class="collection-page">
-                <div class="page-header">
-                    <h2 class="page-title">
-                        <i class="iconpark-icon" icon-name="form"></i>
-                        信息采集
-                    </h2>
-                    <div class="page-actions">
-                        <button class="btn btn-outline btn-sm" onclick="resetCollectionForm()">
-                            <i class="iconpark-icon" icon-name="refresh"></i>
-                            重置表单
-                        </button>
-                        <button class="btn btn-sm" onclick="switchPage('home')">
-                            <i class="iconpark-icon" icon-name="arrow-left"></i>
-                            返回首页
-                        </button>
-                    </div>
-                </div>
+// 初始化百度地图
+function initMap(){
+  try{
+    map = new BMapGL.Map("map");
+    let pt = new BMapGL.Point(113.5816,33.5167);
+    map.centerAndZoom(pt,17);
+    map.enableScrollWheelZoom(true);
+    map.addEventListener("click",(e)=>{
+      if(marker) map.removeOverlay(marker);
+      marker = new BMapGL.Marker(e.point);
+      map.addOverlay(marker);
+      hasLocation = true;
+      check();
+    });
+  }catch(e){}
+}
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="iconpark-icon" icon-name="location"></i>
-                            位置选择
-                            <span id="currentProblemType" style="font-size: 16px; color: var(--text-secondary); margin-left: 12px;">- 请选择问题类型 -</span>
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="map-container" id="mapContainer">
-                            <div class="map-tip">
-                                <i class="iconpark-icon" icon-name="tips"></i>
-                                点击地图选择问题位置，或点击右下角按钮重新定位
-                            </div>
-                            <div class="map-controls">
-                                <button class="map-control-btn" id="locateBtn" onclick="getCurrentLocation()">
-                                    <i class="iconpark-icon" icon-name="location"></i>
-                                </button>
-                                <button class="map-control-btn" id="satelliteBtn" onclick="toggleSatellite()">
-                                    <i class="iconpark-icon" icon-name="earth"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label form-label-required">定位精度</label>
-                            <div class="radio-group">
-                                <label class="radio-item">
-                                    <input type="radio" name="locationAccuracy" value="高精度" checked> 高精度（GPS/北斗）
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="locationAccuracy" value="普通精度"> 普通精度（网络定位）
-                                </label>
-                            </div>
-                            <div class="form-text">
-                                高精度定位需要开启设备GPS，定位结果更准确；普通精度仅需网络，适合室内环境。
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">定位坐标</label>
-                            <div style="display: flex; gap: 16px;">
-                                <div style="flex: 1;">
-                                    <input type="text" class="form-control" id="longitudeInput" placeholder="经度" readonly>
-                                </div>
-                                <div style="flex: 1;">
-                                    <input type="text" class="form-control" id="latitudeInput" placeholder="纬度" readonly>
-                                </div>
-                            </div>
-                            <div class="form-text">
-                                点击地图后自动填充，无需手动输入
-                            </div>
-                        </div>
-                    </div>
-                </div>
+function resetMap(){
+  hasLocation = false;
+  if(marker){map.removeOverlay(marker);marker=null}
+  document.getElementById("address").value = "";
+  document.getElementById("photoPrev").style.display = "none";
+  hasPhoto = false;
+  document.getElementById("file").value = "";
+}
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="iconpark-icon" icon-name="edit"></i>
-                            问题信息
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label class="form-label form-label-required">问题类型</label>
-                            <div class="radio-group">
-                                <label class="radio-item">
-                                    <input type="radio" name="problemType" value="住房问题" onchange="updateProblemType()"> 住房问题
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="problemType" value="小区问题" onchange="updateProblemType()"> 小区问题
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="problemType" value="社区问题" onchange="updateProblemType()"> 社区问题
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="problemType" value="街区问题" onchange="updateProblemType()"> 街区问题
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="problemType" value="城区问题" onchange="updateProblemType()"> 城区问题
-                                </label>
-                            </div>
-                        </div>
+// 照片预览
+function showPhoto(){
+  let file = document.getElementById("file").files[0];
+  if(!file) return;
+  let reader = new FileReader();
+  reader.onload = (e)=>{
+    document.getElementById("photoImg").src = e.target.result;
+    document.getElementById("photoPrev").style.display = "block";
+    hasPhoto = true;
+    check();
+  }
+  reader.readAsDataURL(file);
+}
 
-                        <div class="form-group">
-                            <label class="form-label form-label-required">具体问题</label>
-                            <div class="radio-group">
-                                <label class="radio-item">
-                                    <input type="radio" name="detailProblem" value="墙体结构开裂" checked> 墙体结构开裂
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="detailProblem" value="燃气老化开裂"> 燃气老化开裂
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="detailProblem" value="有飘窗"> 有飘窗
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="detailProblem" value="其他问题" onchange="toggleOtherProblem()"> 其他问题
-                                </label>
-                            </div>
-                        </div>
+// 校验提交条件
+function check(){
+  let addr = document.getElementById("address").value.trim();
+  let hasQ = document.querySelector('input[name="q"]:checked');
+  let ok = addr && hasQ && hasPhoto && hasLocation;
+  document.getElementById("submitBtn").disabled = !ok;
+  document.getElementById("warnTip").style.display = ok ? "none" : "block";
+}
 
-                        <div class="form-group" id="otherProblemGroup" style="display: none;">
-                            <label class="form-label form-label-required">其他问题描述</label>
-                            <textarea class="form-control" id="otherProblemInput" rows="3" placeholder="请详细描述具体问题..."></textarea>
-                        </div>
+// 提交
+function doSubmit(){
+  let dimName = dimData[currentDim].name;
+  let qText = document.querySelector('input[name="q"]:checked').value;
+  let addr = document.getElementById("address").value.trim();
+  let data = {维度:dimName,问题:qText,位置:addr,时间:new Date().toLocaleString()};
+  try{localStorage.setItem("lastReport",JSON.stringify(data))}catch(e){}
+  
+  document.getElementById("collectPage").style.display = "none";
+  document.getElementById("successPage").style.display = "flex";
+}
 
-                        <div class="form-group">
-                            <label class="form-label form-label-required">所在小区/位置</label>
-                            <input type="text" class="form-control" id="communityInput" placeholder="请输入具体小区名称或详细位置" onblur="validateCommunity()">
-                            <div class="form-error" id="communityError">请输入小区名称或详细位置</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">联系人</label>
-                            <input type="text" class="form-control" id="contactNameInput" placeholder="请输入您的姓名（选填）">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">联系电话</label>
-                            <input type="text" class="form-control" id="contactPhoneInput" placeholder="请输入您的联系电话（选填）" onblur="validatePhone()">
-                            <div class="form-error" id="phoneError">请输入正确的手机号码</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">紧急程度</label>
-                            <div class="radio-group">
-                                <label class="radio-item">
-                                    <input type="radio" name="urgencyLevel" value="低" checked> 低（不影响正常使用）
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="urgencyLevel" value="中"> 中（轻微影响使用）
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="urgencyLevel" value="高"> 高（严重影响安全）
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">发现时间</label>
-                            <input type="date" class="form-control" id="discoveryDateInput" value="">
-                            <div class="form-text">
-                                默认为当前日期，可手动选择问题发现的具体时间
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">问题详细描述</label>
-                            <textarea class="form-control" id="problemDescInput" rows="4" placeholder="请详细描述问题的具体情况、影响范围、已采取的措施等（选填）"></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label form-label-required">现场照片</label>
-                            <input type="file" id="photoInput" accept="image/*" multiple style="display: none;" onchange="handlePhotoUpload(this)">
-                            <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
-                                <div class="photo-upload-icon">
-                                    <i class="iconpark-icon" icon-name="camera"></i>
-                                </div>
-                                <div class="photo-upload-text">点击上传照片</div>
-                                <div class="photo-upload-hint">支持JPG/PNG格式，最多上传9张，单张不超过10MB</div>
-                            </div>
-                            <div class="form-error" id="photoError">请至少上传一张现场照片</div>
-                            <div class="photo-preview-list" id="photoPreviewList"></div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">是否需要回访</label>
-                            <div class="radio-group">
-                                <label class="radio-item">
-                                    <input type="radio" name="needCallback" value="是" checked> 是，希望工作人员回访
-                                </label>
-                                <label class="radio-item">
-                                    <input type="radio" name="needCallback" value="否"> 否，仅提供信息
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn btn-danger" onclick="resetCollectionForm()">
-                            <i class="iconpark-icon" icon-name="delete"></i>
-                            重置
-                        </button>
-                        <button class="btn btn-success" id="submitBtn" disabled onclick="submitCollectionForm()">
-                            <i class="iconpark-icon" icon-name="check"></i>
-                            提交信息
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 数据预览页 -->
-            <div id="dataPage" class="data-page">
-                <div class="page-header">
-                    <h2 class="page-title">
-                        <i class="iconpark-icon" icon-name="chart"></i>
-                        采集数据预览
-                    </h2>
-                    <div class="page-actions">
-                        <button class="btn btn-outline btn-sm" onclick="exportData()">
-                            <i class="iconpark-icon" icon-name="download"></i>
-                            导出数据
-                        </button>
-                        <button class="btn btn-sm" onclick="switchPage('home')">
-                            <i class="iconpark-icon" icon-name="arrow-left"></i>
-                            返回首页
-                        </button>
-                    </div>
-                </div>
-
-                <div class="data-filter">
-                    <div class="data-filter-item">
-                        <label class="form-label">问题类型筛选</label>
-                        <select class="form-control" id="problemTypeFilter" onchange="filterData()">
-                            <option value="all">全部类型</option>
-                            <option value="住房问题">住房问题</option>
-                            <option value="小区问题">小区问题</option>
-                            <option value="社区问题">社区问题</option>
-                            <option value="街区问题">街区问题</option>
-                            <option value="城区问题">城区问题</option>
-                        </select>
-                    </div>
-                    <div class="data-filter-item">
-                        <label class="form-label">紧急程度筛选</label>
-                        <select class="form-control" id="urgencyFilter" onchange="filterData()">
-                            <option value="all">全部级别</option>
-                            <option value="低">低</option>
-                            <option value="中">中</option>
-                            <option value="高">高</option>
-                        </select>
-                    </div>
-                    <div class="data-filter-item">
-                        <label class="form-label">时间范围筛选</label>
-                        <input type="date" class="form-control" id="dateFilterStart" placeholder="开始日期" onchange="filterData()">
-                    </div>
-                    <div class="data-filter-item">
-                        <label class="form-label">&nbsp;</label>
-                        <input type="date" class="form-control" id="dateFilterEnd" placeholder="结束日期" onchange="filterData()">
-                    </div>
-                    <div class="data-filter-item" style="align-self: flex-end;">
-                        <button class="btn btn-sm" onclick="resetFilter()">
-                            <i class="iconpark-icon" icon-name="refresh"></i>
-                            重置筛选
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="iconpark-icon" icon-name="table"></i>
-                            采集记录列表
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div id="dataTableContainer">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>序号</th>
-                                        <th>问题类型</th>
-                                        <th>具体问题</th>
-                                        <th>小区/位置</th>
-                                        <th>紧急程度</th>
-                                        <th>提交时间</th>
-                                        <th>操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dataTableBody">
-                                    <!-- 数据动态生成 -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="empty-data" id="emptyData" style="display: none;">
-                            <div class="empty-data-icon">
-                                <i class="iconpark-icon" icon-name="empty"></i>
-                            </div>
-                            <div class="empty-data-text">暂无采集数据</div>
-                            <div class="empty-data-desc">您还没有提交任何采集记录，快去首页开始采集吧！</div>
-                            <button class="btn" onclick="switchPage('collection')">
-                                <i class="iconpark-icon" icon-name="edit"></i>
-                                开始采集
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="iconpark-icon" icon-name="chart-pie"></i>
-                            问题类型分布
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div id="problemTypeChart" class="chart-container"></div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="iconpark-icon" icon-name="chart-bar"></i>
-                            紧急程度分布
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <div id="urgencyChart" class="chart-container"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 关于我们页 -->
-            <div id="aboutPage" class="about-page">
-                <div class="page-header">
-                    <h2 class="page-title">
-                        <i class="iconpark-icon" icon-name="info"></i>
-                        关于我们
-                    </h2>
-                    <div class="page-actions">
-                        <button class="btn btn-sm" onclick="switchPage('home')">
-                            <i class="iconpark-icon" icon-name="arrow-left"></i>
-                            返回首页
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card about-content">
-                    <div class="about-section">
-                        <h3 class="about-section-title">
-                            <i class="iconpark-icon" icon-name="goal"></i>
-                            平台简介
-                        </h3>
-                        <div class="about-section-content">
-                            <p>舞钢市城市体检信息采集平台是由舞钢市城市管理局主导开发的一款面向公众的信息采集工具，旨在通过社会共治的方式，全面、精准、高效地收集城市建设和管理中的各类问题线索，为城市体检、城市更新、精细化管理提供数据支撑和决策依据。</p>
-                            <br>
-                            <p>平台聚焦住房、小区（社区）、街区、城区四大场景，重点采集墙体结构开裂、燃气老化开裂、飘窗安全等民生相关问题，支持位置定位、照片上传、信息描述等功能，操作简单便捷，数据实时存储。</p>
-                        </div>
-                    </div>
-
-                    <div class="about-section">
-                        <h3 class="about-section-title">
-                            <i class="iconpark-icon" icon-name="mission"></i>
-                            建设目标
-                        </h3>
-                        <div class="about-section-content">
-                            <ul style="padding-left: 20px; margin-top: 8px;">
-                                <li>构建全民参与的城市治理格局，打通城市管理的"最后一公里"；</li>
-                                <li>建立城市问题动态数据库，实现问题发现、上报、处置、反馈的闭环管理；</li>
-                                <li>提升城市精细化管理水平，改善居民生活环境和居住品质；</li>
-                                <li>为城市体检和城市更新提供精准的数据支撑和民意参考。</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="about-section">
-                        <h3 class="about-section-title">
-                            <i class="iconpark-icon" icon-name="rule"></i>
-                            数据说明
-                        </h3>
-                        <div class="about-section-content">
-                            <p>1. 您提交的所有信息仅用于舞钢市城市管理和城市体检工作，我们将严格遵守《中华人民共和国个人信息保护法》，保护您的个人隐私；</p>
-                            <br>
-                            <p>2. 位置信息仅用于问题定位，不会用于其他商业用途；</p>
-                            <br>
-                            <p>3. 照片等多媒体资料仅用于问题核实和处置，处置完成后将按照相关规定保存或销毁；</p>
-                            <br>
-                            <p>4. 您可以随时查看、编辑、删除自己提交的采集记录。</p>
-                        </div>
-                    </div>
-
-                    <div class="about-section">
-                        <h3 class="about-section-title">
-                            <i class="iconpark-icon" icon-name="phone"></i>
-                            联系方式
-                        </h3>
-                        <div class="about-contact">
-                            <div class="about-contact-item">
-                                <div class="about-contact-icon">
-                                    <i class="iconpark-icon" icon-name="phone"></i>
-                                </div>
-                                <div class="about-contact-info">
-                                    <div class="about-contact-label">联系电话</div>
-                                    <div class="about-contact-value">0375-12345678</div>
-                                </div>
-                            </div>
-                            <div class="about-contact-item">
-                                <div class="about-contact-icon">
-                                    <i class="iconpark-icon" icon-name="email"></i>
-                                </div>
-                                <div class="about-contact-info">
-                                    <div class="about-contact-label">电子邮箱</div>
-                                    <div class="about-contact-value">wgcsjc@163.com</div>
-                                </div>
-                            </div>
-                            <div class="about-contact-item">
-                                <div class="about-contact-icon">
-                                    <i class="iconpark-icon" icon-name="address"></i>
-                                </div>
-                                <div class="about-contact-info">
-                                    <div class="about-contact-label">办公地址</div>
-                                    <div class="about-contact-value">舞钢市行政中心1号楼5楼</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 提交成功页 -->
-            <div id="successPage" class="success-page">
-                <div class="success-icon">
-                    <i class="iconpark-icon"
+// 返回
+function goBack(){
+  document.getElementById("homePage").style.display = "block";
+  document.getElementById("collectPage").style.display = "none";
+  document.getElementById("successPage").style.display = "none";
+}
+</script>
+</body>
+</html>
