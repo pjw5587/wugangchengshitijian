@@ -215,6 +215,9 @@ const dimData = {
 let currentDim = "";
 let map = null, marker = null;
 let hasLocation = false, hasPhoto = false;
+// --- 新增：存储地图点击的经纬度 ---
+let currentLng = 0;
+let currentLat = 0;
 
 // 打开对应维度
 function openPage(dim){
@@ -249,6 +252,10 @@ function initMap(){
       marker = new BMapGL.Marker(e.point);
       map.addOverlay(marker);
       hasLocation = true;
+      // --- 新增：记录坐标 ---
+      currentLng = e.point.lng;
+      currentLat = e.point.lat;
+      // --------------------
       check();
     });
   }catch(e){}
@@ -256,6 +263,10 @@ function initMap(){
 
 function resetMap(){
   hasLocation = false;
+  // --- 新增：重置坐标 ---
+  currentLng = 0;
+  currentLat = 0;
+  // --------------------
   if(marker){map.removeOverlay(marker);marker=null}
   document.getElementById("address").value = "";
   document.getElementById("photoPrev").style.display = "none";
@@ -286,19 +297,77 @@ function check(){
   document.getElementById("warnTip").style.display = ok ? "none" : "block";
 }
 
-// 提交
-function doSubmit(){
-  let dimName = dimData[currentDim].name;
-  let qText = document.querySelector('input[name="q"]:checked').value;
-  let addr = document.getElementById("address").value.trim();
-  let data = {维度:dimName,问题:qText,位置:addr,时间:new Date().toLocaleString()};
-  try{localStorage.setItem("lastReport",JSON.stringify(data))}catch(e){}
-  
-  document.getElementById("collectPage").style.display = "none";
-  document.getElementById("successPage").style.display = "flex";
-}
+// ********** 核心修改：全新的提交函数，数据发送至云端 **********
+async function doSubmit() {
+  const submitBtn = document.getElementById('submitBtn');
+  const originalText = submitBtn.innerText;
 
-// 返回
+  // 1. 防止重复提交
+  if (!submitBtn.disabled) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = '提交中...';
+  } else {
+    return;
+  }
+
+  // 2. 收集表单数据
+  const dimName = dimData[currentDim].name;
+  const qText = document.querySelector('input[name="q"]:checked').value;
+  const addr = document.getElementById("address").value.trim();
+  const fileInput = document.getElementById('file');
+
+  // 3. 将照片转为Base64（用于存入Airtable）
+  let photoBase64 = '';
+  if (fileInput.files[0]) {
+    photoBase64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.readAsDataURL(fileInput.files[0]);
+    });
+  }
+
+  // 4. 组装发送数据
+  const postData = {
+    维度: dimName,
+    问题: qText,
+    位置: addr,
+    经度: currentLng, // 使用记录的坐标
+    纬度: currentLat,
+    照片: photoBase64, // Base64字符串
+    提交时间: new Date().toISOString()
+  };
+
+  // 5. 发送数据到 Vercel 云函数接口 (/api/submit)
+  try {
+    const response = await fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(postData)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      // 6. 提交成功，跳转页面
+      document.getElementById("collectPage").style.display = "none";
+      document.getElementById("successPage").style.display = "flex";
+    } else {
+      // 7. 服务器返回错误
+      alert(`提交失败：${result.message}`);
+      submitBtn.disabled = false;
+      submitBtn.innerText = originalText;
+    }
+  } catch (error) {
+    // 8. 网络请求失败
+    console.error('提交出错:', error);
+    alert('网络错误，提交失败，请检查网络后重试。');
+    submitBtn.disabled = false;
+    submitBtn.innerText = originalText;
+  }
+}
+// ********** 核心修改结束 **********
+
+// 返回首页
 function goBack(){
   document.getElementById("homePage").style.display = "block";
   document.getElementById("collectPage").style.display = "none";
