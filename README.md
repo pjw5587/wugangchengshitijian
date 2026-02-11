@@ -215,7 +215,7 @@ const dimData = {
 let currentDim = "";
 let map = null, marker = null;
 let hasLocation = false, hasPhoto = false;
-// --- 新增：存储地图点击的经纬度 ---
+// 存储地图点击的经纬度
 let currentLng = 0;
 let currentLat = 0;
 
@@ -252,10 +252,9 @@ function initMap(){
       marker = new BMapGL.Marker(e.point);
       map.addOverlay(marker);
       hasLocation = true;
-      // --- 新增：记录坐标 ---
+      // 记录坐标
       currentLng = e.point.lng;
       currentLat = e.point.lat;
-      // --------------------
       check();
     });
   }catch(e){}
@@ -263,10 +262,8 @@ function initMap(){
 
 function resetMap(){
   hasLocation = false;
-  // --- 新增：重置坐标 ---
   currentLng = 0;
   currentLat = 0;
-  // --------------------
   if(marker){map.removeOverlay(marker);marker=null}
   document.getElementById("address").value = "";
   document.getElementById("photoPrev").style.display = "none";
@@ -297,7 +294,7 @@ function check(){
   document.getElementById("warnTip").style.display = ok ? "none" : "block";
 }
 
-// ********** 核心修改：全新的提交函数，数据发送至云端 **********
+// ========== 提交函数：字段名与Airtable完全统一 ==========
 async function doSubmit() {
   const submitBtn = document.getElementById('submitBtn');
   const originalText = submitBtn.innerText;
@@ -316,7 +313,7 @@ async function doSubmit() {
   const addr = document.getElementById("address").value.trim();
   const fileInput = document.getElementById('file');
 
-  // 3. 将照片转为Base64（用于存入Airtable）
+  // 3. 照片转Base64
   let photoBase64 = '';
   if (fileInput.files[0]) {
     photoBase64 = await new Promise((resolve) => {
@@ -326,18 +323,18 @@ async function doSubmit() {
     });
   }
 
-  // 4. 组装发送数据
+  // 4. 组装发送数据 —— 字段名与 Airtable 列名完全一致
   const postData = {
-    维度: dimName,
-    问题: qText,
-    位置: addr,
-    经度: currentLng, // 使用记录的坐标
+    问题类型: dimName,
+    具体问题: qText,
+    小区名称: addr,
+    经度: currentLng,
     纬度: currentLat,
-    照片: photoBase64, // Base64字符串
+    照片: photoBase64,
     提交时间: new Date().toISOString()
   };
 
-  // 5. 发送数据到 Vercel 云函数接口 (/api/submit)
+  // 5. 发送到 Vercel 云函数
   try {
     const response = await fetch('/api/submit', {
       method: 'POST',
@@ -348,24 +345,22 @@ async function doSubmit() {
     const result = await response.json();
 
     if (result.success) {
-      // 6. 提交成功，跳转页面
+      // 提交成功
       document.getElementById("collectPage").style.display = "none";
       document.getElementById("successPage").style.display = "flex";
     } else {
-      // 7. 服务器返回错误
       alert(`提交失败：${result.message}`);
       submitBtn.disabled = false;
       submitBtn.innerText = originalText;
     }
   } catch (error) {
-    // 8. 网络请求失败
     console.error('提交出错:', error);
     alert('网络错误，提交失败，请检查网络后重试。');
     submitBtn.disabled = false;
     submitBtn.innerText = originalText;
   }
 }
-// ********** 核心修改结束 **********
+// ========== 提交函数结束 ==========
 
 // 返回首页
 function goBack(){
